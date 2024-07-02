@@ -1,0 +1,42 @@
+# https://developer.hashicorp.com/vagrant/docs/networking/private_network
+# https://developer.hashicorp.com/vagrant/docs/multi-machine
+# https://developer.hashicorp.com/vagrant/docs/boxes
+# https://developer.hashicorp.com/vagrant/docs/providers/virtualbox/configuration#vboxmanage-customizations
+# https://docs.k3s.io/installation/configuration
+
+# Possible improvements:
+# - is it possible to set the K3S_TOKEN in a file, like a .env ?
+# - is it possible to make the vm's only have one network interface, so that the node-ip does not need to be explicitely configured?
+
+Vagrant.configure("2") do |config|
+	config.vm.provider "virtualbox" do |v|
+		v.memory = 1024
+		v.cpus = 1
+	end
+
+        config.vm.provision "shell", inline: "echo Hello"
+	config.vm.box = "ubuntu/xenial64"
+
+        config.vm.define "anggonzaS" do |s|
+	  s.vm.hostname = "anggonzaS"
+          s.vm.network "private_network", ip: "192.168.56.110"
+	  s.vm.provider "virtualbox" do |v|
+            v.customize ["modifyvm", :id, "--name", "anggonzaS"]
+          end
+          s.vm.provision "bootstrap", type: "shell" do |shell|
+            shell.inline = "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='--token maybemakethisavariable --node-ip 192.168.56.110' sh -s -"
+          end
+        end
+
+        config.vm.define "anggonzaSW" do |sw|
+          sw.vm.hostname = "anggonzaSW"
+          sw.vm.network "private_network", ip: "192.168.56.111"
+	  sw.vm.provider "virtualbox" do |v|
+            v.customize ["modifyvm", :id, "--name", "anggonzaSW"]
+          end
+          sw.vm.provision "bootstrap", type: "shell" do |shell|
+            shell.inline = "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='--node-ip 192.168.56.111' K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=maybemakethisavariable sh -s -"
+          end
+        end
+end
+
