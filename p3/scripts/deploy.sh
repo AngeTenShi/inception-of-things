@@ -2,9 +2,6 @@
 
 set -e
 
-# because of self-signed certificate
-alias argocd="argocd --insecure"
-
 # initialize cluster, if not working, delete with `k3d cluster delete p3`
 k3d cluster create p3
 
@@ -15,7 +12,7 @@ kubectl apply -f ../confs/namespaces.yaml
 kubectl config set-context --current --namespace=argocd
 
 # install argocd in argocd namespace
-kubectl -n argocd apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 # allow argocd to create all thats needed
 sleep 3
@@ -37,10 +34,11 @@ argocd app create wilapp --repo 'https://github.com/achansel/anggonza-iot-p3.git
 # logout argocd
 argocd logout kubernetes
 
-# give it some time for app creation
-sleep 20
+# give it some time for app creation/deployement, maybe improve with conditional waiting instead of sleep, same applies for all the above.
+# is the sleep enough for app to sync?
+sleep 40
 
 echo "Now forwarding app to port 8888 and argocd to port 8080, Ctrl+C twice to interrupt (first argo, then app)"
 
 # forward ports because ingress setup is not too funny because of default HTTPS of argocd-server
-kubectl port-forward svc/playground -n dev 8888:8888 & kubectl port-forward svc/argocd-server -n argocd 8080:443 -address 0.0.0.0 && fg
+kubectl port-forward svc/playground -n dev 8888:8888 & kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0 && fg
