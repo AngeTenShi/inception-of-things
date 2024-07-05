@@ -3,9 +3,13 @@
 set -e
 
 # FOR debian12
+sudo apt update
+
+# cURL
+sudo apt install -y curl
 
 # docker
-sudo apt update && sudo apt install -y docker.io
+sudo apt install -y docker.io
 sudo adduser $USER docker
 
 # k3d
@@ -18,7 +22,7 @@ rm kubectl
 
 # argocd
 curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+sudo install -m 755 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
 echo "success"

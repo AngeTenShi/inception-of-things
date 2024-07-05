@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wilapp
+  namespace: argocd
+spec:
+  project: wilapp
+  source:
+    repoURL: https://github.com/achansel/anggonza-iot-p3.git
+    targetRevision: HEAD
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      selfHeal: true
