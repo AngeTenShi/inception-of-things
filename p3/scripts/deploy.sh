@@ -15,35 +15,31 @@ kubectl config set-context --current --namespace=argocd
 echo "INSTALLING ARGOCD..."
 kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# TODO: Make it work, pods have to be created in order to be able to wait for them after, that's what needs to be awaited, the interface is really bad
+# loop because they cannot be awaited at first since they are not even created.
 set +e
 while true; do
-	kubectl get pods
-	if [ "$?" = "0" ]; then
-		break
-	fi
+  if kubectl wait --for=condition=ready pods --all --timeout=600s 2>/dev/null; then
+    break
+  fi
 done
 set -e
 
-kubectl wait --for=condition=ready pods --all --namespace=argocd --timeout=600s
-
-#TODO: After
 # get creds (https://stackoverflow.com/questions/68297354/what-is-the-default-password-of-argocd)
 echo "GETTING ARGOCD CREDS..."
 echo "argocd creds: (user: admin, password is: $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d))"
 
-# give it some time
-sleep 20
+# add the app, github auto sync will be done every 3 minutes (default config)
+argocd app create wilapp --repo 'https://github.com/achansel/anggonza-iot-p3.git' --path . --dest-server 'https://kubernetes.default.svc' --dest-namespace dev --sync-policy auto --self-heal
 
-# add the app, auto reload every 3 minutes (mas o menos, check def config for self heal)
-kubectl apply -f ../confs/wilapp-manifest.yaml
+# same as the previous similar loop
+set +e
+while true; do
+  if kubectl wait --for=condition=available deployment playground --namespace=dev --timeout=600s 2>/dev/null; then
+    break
+  fi
+done
+set -e
 
-# probably same here, as the todo above
-kubectl wait --for=condition=available deployment playground --namespace=dev --timeout=600s
-
-# give it some time for app creation/deployement, maybe improve with conditional waiting instead of sleep, same applies for all the above.
-# is the sleep enough for app to sync?
-sleep 40
 
 echo "Now forwarding app to port 8888 and argocd to port 8080, Ctrl+C twice to interrupt (first argo, then app)"
 
