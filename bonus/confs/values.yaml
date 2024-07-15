@@ -1,6 +1,7 @@
 certmanager-issuer:
     email: "achansel@42.fr"
 global:
+    edition: ce
     hosts:
         domain: achansel.com
     rails:
