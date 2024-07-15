@@ -34,7 +34,7 @@ echo "argocd creds: (user: admin, password is: $(kubectl -n argocd get secret ar
 
 helm repo add gitlab https://charts.gitlab.io 2>/dev/null
 helm repo update
-helm install gitlab gitlab/gitlab -f $CURRENT_PATH/../confs/values.yaml --namespace gitlab
+#helm install gitlab gitlab/gitlab -f $CURRENT_PATH/../confs/values.yaml --namespace gitlab
 
 
 # kubectl apply -f $CURRENT_PATH/../confs/gitlab-project.yaml it seems that it's not needed

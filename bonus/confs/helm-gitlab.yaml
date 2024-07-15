@@ -11,7 +11,7 @@ spec:
     targetRevision: 8.1.1
     helm:
       valueFiles:
-        - https://raw.githubusercontent.com/achansel/inception-of-things/main/bonus/confs/values.yaml?token=GHSAT0AAAAAACOVXUYAZ7TUBY3SPKA4KJX6ZUVADWA
+        - https://raw.githubusercontent.com/achansel/inception-of-things/main/bonus/confs/values.yaml?token=GHSAT0AAAAAACOVXUYBZDRU4MLGT6B6SV3EZUVEQGA
   destination:
     server: https://kubernetes.default.svc
     namespace: gitlab

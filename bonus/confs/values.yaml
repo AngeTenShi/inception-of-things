@@ -18,3 +18,5 @@ gitlab:
                 - 172.30.33.193/20
 upgradeCheck:
   enabled: false
+gitlab-runner:
+  install: false
