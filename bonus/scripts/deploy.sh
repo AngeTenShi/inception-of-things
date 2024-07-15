@@ -32,12 +32,7 @@ set -e
 echo "GETTING ARGOCD CREDS..."
 echo "argocd creds: (user: admin, password is: $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d))"
 
-helm repo add gitlab https://charts.gitlab.io 2>/dev/null
-helm repo update
-#helm install gitlab gitlab/gitlab -f $CURRENT_PATH/../confs/values.yaml --namespace gitlab
 
-
-# kubectl apply -f $CURRENT_PATH/../confs/gitlab-project.yaml it seems that it's not needed
 kubectl apply -f $CURRENT_PATH/../confs/helm-gitlab.yaml 
 # 7 min to launch almost
 kubectl wait --for=condition=available deployment gitlab-webservice-default --namespace=gitlab --timeout=600s
