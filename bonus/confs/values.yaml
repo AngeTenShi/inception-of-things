@@ -7,8 +7,6 @@ global:
     rails:
         bootsnap:
           enabled: false
-    ingress:
-        configureCertmanager: false
 gitlab:
     webservice:
         minReplicas: 1
