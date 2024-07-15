@@ -18,3 +18,5 @@ gitlab:
             type: LoadBalancer
             loadBalancerSourceRanges: 
                 - 172.30.33.193/20
+upgradeCheck:
+  enabled: false
