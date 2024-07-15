@@ -1,10 +1,9 @@
 global:
     ingress:
         configureCertmanager: false
-        class: "nginx"
+        enabled: true
     hosts:
         domain: achansel.com
-        externalIP: 10.10.10.10
     rails:
         bootsnap:
           enabled: false
@@ -12,6 +11,8 @@ global:
         port: 32022
 certmanager:
     install: false
+certmanager-issuer:
+    email: "achansel@42.com"
 nginx-ingress:
     enabled: false
 prometheus:
@@ -35,3 +36,7 @@ gitlab:
         hpa:
             minReplicas: 1
             maxReplicas: 1
+    webservice:
+        service:
+            type: LoadBalancer
+            loadBalancerSourceRanges: ["172.30.33.193/20"]

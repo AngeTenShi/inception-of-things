@@ -37,8 +37,8 @@ helm repo update
 helm install gitlab gitlab/gitlab -f $CURRENT_PATH/../confs/values.yaml --namespace gitlab
 
 
-kubectl apply -f $CURRENT_PATH/../confs/gitlab-project.yaml
-kubectl apply -f $CURRENT_PATH/../confs/helm-gitlab.yaml
+# kubectl apply -f $CURRENT_PATH/../confs/gitlab-project.yaml it seems that it's not needed
+kubectl apply -f $CURRENT_PATH/../confs/helm-gitlab.yaml 
 # 7 min to launch almost
 kubectl wait --for=condition=available deployment gitlab-webservice-default --namespace=gitlab --timeout=600s
 
