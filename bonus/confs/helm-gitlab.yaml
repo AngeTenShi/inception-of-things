@@ -4,14 +4,14 @@ metadata:
   name: gitlab
   namespace: argocd
 spec:
-  project: gitlab-project
+  project: default
   source:
     repoURL: https://charts.gitlab.io/
     chart: gitlab
     targetRevision: 8.1.1
     helm:
       valueFiles:
-        - values.yaml
+        - https://raw.githubusercontent.com/achansel/inception-of-things/main/bonus/confs/values.yaml?token=GHSAT0AAAAAACOVXUYAZ7TUBY3SPKA4KJX6ZUVADWA
   destination:
     server: https://kubernetes.default.svc
     namespace: gitlab

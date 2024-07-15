@@ -1,42 +1,19 @@
+certmanager-issuer:
+    email: "achansel@42.fr"
 global:
-    ingress:
-        configureCertmanager: false
-        enabled: true
     hosts:
         domain: achansel.com
     rails:
         bootsnap:
           enabled: false
-    shell:
-        port: 32022
-certmanager:
-    install: false
-certmanager-issuer:
-    email: "achansel@42.com"
-nginx-ingress:
-    enabled: false
-prometheus:
-    install: false
-gitlab-runner:
-    install: false
+    ingress:
+        configureCertmanager: false
 gitlab:
     webservice:
         minReplicas: 1
         maxReplicas: 1
-    sidekiq:
-        minReplicas: 1
-        maxReplicas: 1
-    gitlab-shell:
-        minReplicas: 1
-        maxReplicas: 1
-        service:
-            type: NodePort
-            nodePort: 32022
-    registry:
-        hpa:
-            minReplicas: 1
-            maxReplicas: 1
     webservice:
         service:
             type: LoadBalancer
-            loadBalancerSourceRanges: ["172.30.33.193/20"]
+            loadBalancerSourceRanges: 
+                - 172.30.33.193/20
