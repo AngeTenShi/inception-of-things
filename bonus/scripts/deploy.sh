@@ -17,7 +17,7 @@ kubectl config set-context --current --namespace=argocd
 
 # install argocd in argocd namespace
 echo "INSTALLING ARGOCD..."
-kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml 
 
 # loop because they cannot be awaited at first since they are not even created.
 set +e
@@ -49,26 +49,60 @@ GITLAB_PASSWORD=$(kubectl get secret gitlab-gitlab-initial-root-password -n gitl
 GITLAB_IP=$(kubectl get svc gitlab-nginx-ingress-controller -n gitlab -ojsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 # remove insecure when not self-signed no more
-alias curl='curl --insecure --header "Host: gitlab.example.com"'
+alias curl='curl --insecure --header "Host: gitlab.achansel.com"'
 
-GITLAB_TOKEN=$(curl --header "Content-Type: application/json" -X POST "https://$GITLAB_IP/oauth/token?grant_type=password&username=root&password=$GITLAB_PASSWORD" --insecure | jq -r '.access_token')
+GITLAB_TOKEN=$(curl "Content-Type: application/json" -X POST "https://$GITLAB_IP/oauth/token?grant_type=password&username=root&password=$GITLAB_PASSWORD" | jq -r '.access_token')
 
 PROJECT_NAME="anggonza-iot-p3"
-curl -v --header "Authorization: Bearer $GITLAB_TOKEN" -X POST "https://$GITLAB_IP/api/v4/projects" --data "name=$PROJECT_NAME"
+curl --request POST \
+  --url "https://$GITLAB_IP/api/v4/projects" \
+  --header "content-type: application/json" \
+  --header "Authorization: Bearer $GITLAB_TOKEN" \
+  --data '{
+    "name": "'"$PROJECT_NAME"'",
+    "visibility": "public"
+  }'
 
-sleep 10
+echo "$GITLAB_IP gitlab.achansel.com" | sudo tee -a /etc/hosts
 
-# Import GitHub repo to GitLab
+# clone the new GitLab repo
+echo "CLONING GITLAB REPO..."
+GITLAB_REPO="https://gitlab.achansel.com/root/$PROJECT_NAME.git"
+# config for one time avoid ssl verification
+git config --global http.sslVerify false
+# it asks for the password, so we need to set it
+echo "https://root:$GITLAB_PASSWORD@gitlab.achansel.com" > ~/.git-credentials
+git config --global credential.helper store
+git clone $GITLAB_REPO
+git config --global user.email "achansel@42.fr"
+git config --global user.name "achansel"
+# copy the app to the new repo
+echo "COPYING APP TO GITLAB REPO..."
 GITHUB_REPO="https://github.com/achansel/anggonza-iot-p3.git"
-echo "IMPORTING GITHUB REPO TO GITLAB..."
-# TODO: FIX THIS: https://docs.gitlab.com/ee/api/import.html#import-repository-from-github --> maybe clone it then push?
-curl --header "Authorization: Bearer $GITLAB_TOKEN" -X POST "https://$GITLAB_IP/api/v4/projects/$PROJECT_NAME/import" --data "url=$GITHUB_REPO"
+git clone $GITHUB_REPO to_copy
+cp -r to_copy/* $PROJECT_NAME/
+rm -rf to_copy
+cd $PROJECT_NAME
+git add .
+git commit -m "Initial commit"
+git push
+git config --global http.sslVerify true
+cd ..
+rm -rf anggonza-iot-p3
+git config --global --unset user.email  
+git config --global --unset user.name
+rm -rf ~/.git-credentials
+git config --global --unset credential.helper
 
-# todo: add right host here, so that it forwards to the right host, also fix the certificate.
-GITLAB_REPO="https://$GITLAB_IP/$PROJECT_NAME.git"
+
+openssl s_client -showcerts -servername gitlab.achansel.com -connect $GITLAB_IP:443 </dev/null 2>/dev/null | openssl x509 -outform PEM > gitlab.crt
+argocd cert add-tls gitlab.achansel.com --from gitlab.crt
+# echo "GETTING CA CERT..."
+# kubectl get secret gitlab-gitlab-tls -n gitlab -o jsonpath='{.data.tls\.key}' | base64 --decode > gitlab-ca.crt
 
 # add the app, gitlab auto sync will be done every 3 minutes (default config)
-argocd app create wilapp --repo $GITLAB_REPO --path . --dest-server 'https://kubernetes.default.svc' --dest-namespace dev --sync-policy auto --self-heal
+argocd login --core
+argocd app create wilapp --repo $GITLAB_REPO --path . --dest-server https://kubernetes.default.svc --dest-namespace dev --sync-policy automated --auto-prune --insecure
 
 # same as the previous similar loop
 set +e
@@ -78,7 +112,6 @@ while true; do
   fi
 done
 set -e
-
 
 echo "Now forwarding app to port 8888 and argocd to port 8080, Ctrl+C twice to interrupt (first argo, then app)"
 

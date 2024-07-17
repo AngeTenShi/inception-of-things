@@ -8,30 +8,22 @@ spec:
   source:
     repoURL: https://charts.gitlab.io/
     chart: gitlab
-    targetRevision: 8.1.1
+    targetRevision: 8.1.2
     helm:
       valuesObject:
         certmanager-issuer:
             email: "anggonza@student.42nice.fr"
-        certmanager:
-            install: false
         global:
             edition: ce
-            #hosts:
-            #    domain: achansel.com
+            hosts:
+               domain: achansel.com
             rails:
                 bootsnap:
                   enabled: false
-            ingress:
-                configureCertmanager: false
         gitlab:
             webservice:
                 minReplicas: 1
                 maxReplicas: 1
-                #service:
-                #    type: LoadBalancer
-                #    loadBalancerSourceRanges: 
-                #        - 172.30.33.193/20
         upgradeCheck:
           enabled: false
         gitlab-runner:
@@ -43,3 +35,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+
+
