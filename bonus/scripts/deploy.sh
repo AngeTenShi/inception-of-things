@@ -65,44 +65,25 @@ curl --request POST \
 
 echo "$GITLAB_IP gitlab.achansel.com" | sudo tee -a /etc/hosts
 
-# clone the new GitLab repo
-echo "CLONING GITLAB REPO..."
-GITLAB_REPO="https://gitlab.achansel.com/root/$PROJECT_NAME.git"
-# config for one time avoid ssl verification
-git config --global http.sslVerify false
-# it asks for the password, so we need to set it
-echo "https://root:$GITLAB_PASSWORD@gitlab.achansel.com" > ~/.git-credentials
-git config --global credential.helper store
-git clone $GITLAB_REPO
-git config --global user.email "achansel@42.fr"
-git config --global user.name "achansel"
-# copy the app to the new repo
-echo "COPYING APP TO GITLAB REPO..."
+GITLAB_REPO="https://gitlab.achansel.com/root/anggonza-iot-p3.git"
 GITHUB_REPO="https://github.com/achansel/anggonza-iot-p3.git"
 git clone $GITHUB_REPO to_copy
-cp -r to_copy/* $PROJECT_NAME/
-rm -rf to_copy
-cd $PROJECT_NAME
-git add .
-git commit -m "Initial commit"
-git push
-git config --global http.sslVerify true
-cd ..
-rm -rf anggonza-iot-p3
-git config --global --unset user.email  
-git config --global --unset user.name
-rm -rf ~/.git-credentials
+cd to_copy
+git config --global http.sslVerify false
+git config --global user.email "achansel@42.fr"
+git config --global user.name "achansel"
+echo "https://root:$GITLAB_PASSWORD@gitlab.achansel.com" > ~/.git-credentials
+git config --global credential.helper store
+git push $GITLAB_REPO master
 git config --global --unset credential.helper
-
-
-openssl s_client -showcerts -servername gitlab.achansel.com -connect $GITLAB_IP:443 </dev/null 2>/dev/null | openssl x509 -outform PEM > gitlab.crt
-argocd cert add-tls gitlab.achansel.com --from gitlab.crt
-# echo "GETTING CA CERT..."
-# kubectl get secret gitlab-gitlab-tls -n gitlab -o jsonpath='{.data.tls\.key}' | base64 --decode > gitlab-ca.crt
+cd .. 
+rm -rf to_copy
+rm -rf ~/.git-credentials
 
 # add the app, gitlab auto sync will be done every 3 minutes (default config)
 argocd login --core
-argocd app create wilapp --repo $GITLAB_REPO --path . --dest-server https://kubernetes.default.svc --dest-namespace dev --sync-policy automated --auto-prune --insecure
+GITLAB_WS_POD=$(kubectl get svc -n gitlab gitlab-webservice-default -ojsonpath='{.spec.clusterIP}')
+argocd app create wilapp --repo http://$GITLAB_WS_POD/root/anggonza-iot-p3.git --path . --dest-server https://kubernetes.default.svc --dest-namespace dev --sync-policy automated --auto-prune
 
 # same as the previous similar loop
 set +e
