@@ -51,39 +51,35 @@ GITLAB_IP=$(kubectl get svc gitlab-nginx-ingress-controller -n gitlab -ojsonpath
 # remove insecure when not self-signed no more
 alias curl='curl --insecure --header "Host: gitlab.achansel.com"'
 
-GITLAB_TOKEN=$(curl "Content-Type: application/json" -X POST "https://$GITLAB_IP/oauth/token?grant_type=password&username=root&password=$GITLAB_PASSWORD" | jq -r '.access_token')
+GITLAB_TOKEN=$(curl --header "Content-Type: application/json" -X POST "https://$GITLAB_IP/oauth/token?grant_type=password&username=root&password=$GITLAB_PASSWORD" | jq -r '.access_token')
 
 PROJECT_NAME="anggonza-iot-p3"
 curl --request POST \
   --url "https://$GITLAB_IP/api/v4/projects" \
-  --header "content-type: application/json" \
+  --header "Content-Type: application/json" \
   --header "Authorization: Bearer $GITLAB_TOKEN" \
   --data '{
     "name": "'"$PROJECT_NAME"'",
     "visibility": "public"
-  }'
+  }' 2>&1 > /dev/null
 
 echo "$GITLAB_IP gitlab.achansel.com" | sudo tee -a /etc/hosts
 
 GITLAB_REPO="https://gitlab.achansel.com/root/anggonza-iot-p3.git"
 GITHUB_REPO="https://github.com/achansel/anggonza-iot-p3.git"
-git clone $GITHUB_REPO to_copy
-cd to_copy
-git config --global http.sslVerify false
-git config --global user.email "achansel@42.fr"
-git config --global user.name "achansel"
+git clone $GITHUB_REPO /tmp/to_copy && cd /tmp/to_copy
 echo "https://root:$GITLAB_PASSWORD@gitlab.achansel.com" > ~/.git-credentials
 git config --global credential.helper store
-git push $GITLAB_REPO master
+git -c http.sslVerify=false push --set-upstream $GITLAB_REPO main
 git config --global --unset credential.helper
-cd .. 
-rm -rf to_copy
-rm -rf ~/.git-credentials
+cd -
+rm -rf /tmp/to_copy
+shred ~/.git-credentials
 
 # add the app, gitlab auto sync will be done every 3 minutes (default config)
 argocd login --core
 GITLAB_WS_POD=$(kubectl get svc -n gitlab gitlab-webservice-default -ojsonpath='{.spec.clusterIP}')
-argocd app create wilapp --repo http://$GITLAB_WS_POD/root/anggonza-iot-p3.git --path . --dest-server https://kubernetes.default.svc --dest-namespace dev --sync-policy automated --auto-prune
+argocd app create wilapp --repo http://$GITLAB_WS_POD:8181/root/anggonza-iot-p3.git --path . --dest-server https://kubernetes.default.svc --dest-namespace dev --sync-policy automated --auto-prune
 
 # same as the previous similar loop
 set +e
